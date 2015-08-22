@@ -1,101 +1,84 @@
-var WIDTH, HEIGHT, canvas, con, g;
-var pxs = [];
-var rint = 50;
+var height = $('body').innerHeight(),
+    width = $('body').innerWidth(),
+    canvas = document.getElementById('canvas'),
+    ctx = canvas.getContext('2d'),
+    path = {},
+    defaultAnimations = [],
+    nextAnimations = [];
+
+$('#canvas').attr('height', height).attr('width', width);
+
+function draw(animations) {
+  ctx.clearRect(0, 0, width, height);
+
+  var cx = 0,
+      cy = 0,
+      s = 40,
+      apothem = (Math.sqrt(3) * s) / 2,
+      maxCols = Math.floor((width/(1.5*s) + 1)),
+      maxRows = Math.floor((height/(2*apothem) + 1)),
+      randomRow = randomIntBetween(0, maxRows).toString(),
+      randomColumn = randomIntBetween(0, maxCols).toString(),
+      randomSide = randomIntBetween(1, 6).toString();
+
+  defaultAnimations = [randomRow + 'x' + randomColumn + 'y' + randomSide + 'n'];
+  nextAnimations = animations ? animations : defaultAnimations;
+
+  console.log(nextAnimations);
+
+  keyHexSide = randomRow + 'x' + randomColumn + 'y' + randomSide + 'n';
+
+  for(var j = 0; j < maxCols; j++) {
+    if(j % 2 === 1) {
+      for(var i = 0; i < maxRows; i++) {
+        hex(cx + 1.5 * s * j, cy + 2 * apothem * i - apothem, s, i, j);
+      }
+    }
+    else {
+      for(var i = 0; i < maxRows; i++) {
+        hex(cx + 1.5 * s * j, cy + 2 * apothem * i, s, i, j);
+      }
+    }
+  }
+
+
+}
+
+function hex(cx, cy, s, indexX, indexY) {
+  var x = indexX.toString() + 'x',
+      y = indexY.toString() + 'y';
+
+
+  for(var i = 1; i < 7; i++) {
+    var n = i.toString() + 'n';
+    path[x+y+n] = new Path2D();
+    if(i === 1) {
+      path[x+y+n].moveTo(cx + s, cy + 0);
+      path[x+y+n].lineTo(cx + s * Math.cos(i * Math.PI / 3),
+                 cy + s * Math.sin(i * Math.PI / 3));
+    }
+    else {
+      path[x+y+n].moveTo(cx + s * Math.cos((i-1) * Math.PI / 3),
+                 cy + s * Math.sin((i-1) * Math.PI / 3));
+      path[x+y+n].lineTo(cx + s * Math.cos(i * Math.PI / 3),
+                 cy + s * Math.sin(i * Math.PI / 3));
+    }
+    if(nextAnimations.indexOf(x+y+n) > -1) {
+      ctx.strokeStyle = 'rgb(255, 0, 0)';
+    }
+    else {
+      ctx.strokeStyle = 'rgba(0,0,0, 0.1)';
+    }
+    ctx.stroke(path[x+y+n]);
+  }
+
+
+}
+
+function randomIntBetween(min,max) {
+    return Math.floor(Math.random()*(max-min+1)+min);
+}
+
 $(document).ready(function() {
-    var windowSize = function() {
-        WIDTH = $('body').innerWidth();
-        HEIGHT = $('body').innerHeight();
-        canvas = $('#galaxy');
-        canvas.attr('width', WIDTH).attr('height', HEIGHT);
-    }
-    windowSize();
-    $(window).resize(function() {
-        windowSize();
-    });
-    con = canvas[0].getContext('2d');
-    for (var i = 0; i < 100; i++) {
-        pxs[i] = new Circle();
-        pxs[i].reset();
-    }
-    requestAnimationFrame(draw);
-}
-);
-function draw() {
-    con.clearRect(0, 0, WIDTH, HEIGHT);
-    con.globalCompositeOperation = "lighter";
-    for (var i = 0; i < pxs.length; i++) {
-        pxs[i].fade();
-        pxs[i].move();
-        pxs[i].draw();
-    }
-    requestAnimationFrame(draw);
-}
-function Circle() {
-    this.s = {
-        ttl: 15000,
-        xmax: 5,
-        ymax: 2,
-        rmax: 7,
-        rt: 1,
-        xdef: 960,
-        ydef: 540,
-        xdrift: 4,
-        ydrift: 4,
-        random: true,
-        blink: true
-    };
-    this.reset = function() {
-        this.x = (this.s.random ? WIDTH * Math.random() : this.s.xdef);
-        this.y = (this.s.random ? HEIGHT * Math.random() : this.s.ydef);
-        this.r = ((this.s.rmax - 1) * Math.random()) + 1;
-        this.dx = (Math.random() * this.s.xmax) * (Math.random() < 0.5 ? -1 : 1);
-        this.dy = (Math.random() * this.s.ymax) * (Math.random() < 0.5 ? -1 : 1);
-        this.hl = (this.s.ttl / rint) * (this.r / this.s.rmax);
-        this.rt = Math.random() * this.hl;
-        this.s.rt = Math.random() + 1;
-        this.stop = Math.random() * 0.2 + 0.4;
-        this.s.xdrift *= Math.random() * (Math.random() < 0.5 ? -1 : 1);
-        this.s.ydrift *= Math.random() * (Math.random() < 0.5 ? -1 : 1);
-    }
-    ;
-    this.fade = function() {
-        this.rt += this.s.rt;
-    }
-    ;
-    this.draw = function() {
-        if (this.s.blink && (this.rt <= 0 || this.rt >= this.hl))
-            this.s.rt = this.s.rt * -1;
-        else if (this.rt >= this.hl)
-            this.reset();
-        var newo = 1 - (this.rt / this.hl);
-        con.beginPath();
-        con.arc(this.x, this.y, this.r, 0, Math.PI * 2, true);
-        con.closePath();
-        var cr = this.r * newo;
-        g = con.createRadialGradient(this.x, this.y, 0, this.x, this.y, (cr <= 0 ? 1 : cr));
-        g.addColorStop(0.0, 'rgba(193,254,254,' + newo + ')');
-        g.addColorStop(this.stop, 'rgba(193,254,254,' + (newo * 0.2) + ')');
-        g.addColorStop(1.0, 'rgba(193,254,254,0)');
-        con.fillStyle = g;
-        con.fill();
-    }
-    ;
-    this.move = function() {
-        this.x += (this.rt / this.hl) * this.dx;
-        this.y += (this.rt / this.hl) * this.dy;
-        if (this.x > WIDTH || this.x < 0)
-            this.dx *= -1;
-        if (this.y > HEIGHT || this.y < 0)
-            this.dy *= -1;
-    }
-    ;
-    this.getX = function() {
-        return this.x;
-    }
-    ;
-    this.getY = function() {
-        return this.y;
-    }
-    ;
-}
-;
+  draw();
+});
