@@ -5,6 +5,7 @@ var height = $('body').innerHeight(),
     path = {},
     defaultAnimations = [],
     nextAnimations = [],
+    sidesToAnimate = [],
     pause = false;
 
 $('#canvas').attr('height', height).attr('width', width);
@@ -31,13 +32,18 @@ function draw(animations) {
       maxCols = Math.floor((width/(1.5*s) + 1)),
       maxRows = Math.floor((height/(2*apothem) + 1));
 
-
   defaultAnimations = [];
 
   for(var i = 0; i < 50; i++) {
-    defaultAnimations.push(randomSide(maxRows, maxCols));
+    var randDir = randomIntBetween(1,2),
+        randomDirection = (randDir === 1) ? 'ccw' : 'cw';
+
+    defaultAnimations.push({
+      side: randomSide(maxRows, maxCols),
+      direction: randomDirection
+    });
   }
-  //defaultAnimations = ['0x3y5n'];
+
   nextAnimations = animations ? animations : defaultAnimations;
 
   for(var j = 0; j < maxCols; j++) {
@@ -60,75 +66,74 @@ function draw(animations) {
     }
     else {
       var newestAnimations = [];
+      sidesToAnimate = [];
 
+      for(var i = 0; i < 1; i++) {
+        var randSide = randomSide(maxRows, maxCols),
+            randDir = randomIntBetween(1,2),
+            randomDirection = (randDir === 1) ? 'ccw' : 'cw';
+
+        newestAnimations.push({
+          side: randSide,
+          direction: randomDirection
+        });
+
+        sidesToAnimate.push(randSide);
+      }
 
       for(var k = 0; k < nextAnimations.length; k++) {
-
-        var side = nextAnimations[k],
-            x = parseInt(side.split('x')[0], 10),
-            y = parseInt(side.split('y')[0].split('x')[1], 10),
-            n = parseInt(side.split('y')[1].split('n')[0], 10),
+        var side = nextAnimations[k].side,
+            direction = nextAnimations[k].direction,
             randomNo = randomIntBetween(1,2);
 
         if(randomNo === 1) {
           var fork = 'left',
-              next = nextSide('ccw', fork, side);
+              next = nextSide(direction, fork, side),
+              nextArray = positionArray(next),
+                __x = nextArray[0],
+                __y = nextArray[1];
 
-          newestAnimations.push(next);
+          if(__x >= 0 && __x <= maxRows && __y >=0 && __y <= maxCols) {
+            newestAnimations.push({
+              side: next,
+              direction: direction
+            });
+
+            sidesToAnimate.push(next);
+            sidesToAnimate.push(equivalentSide(next));
+          }
+
           //newestAnimations.push(equivalentSide(next));
         }
         else {
           var fork = 'right',
-              next = nextSide('ccw', fork, side);
+              next = nextSide(direction, fork, side),
+              nextArray = positionArray(next),
+                __x = nextArray[0],
+                __y = nextArray[1];
 
-          newestAnimations.push(next);
-          //newestAnimations.push(equivalentSide(next));
+              if(__x >= 0 && __x <= maxRows && __y >=0 && __y <= maxCols) {
+                newestAnimations.push({
+                  side: next,
+                  direction: direction
+                });
+
+                sidesToAnimate.push(next);
+                sidesToAnimate.push(equivalentSide(next));
+              }
         }
-
-        /*if(randomNo === 1) {
-          var newX = x,
-              newY = y,
-              newN = (n === 5) ? 6 : (n + 1) % 6;
-
-          newestAnimations.push(newX.toString() + 'x' +
-                                newY.toString() + 'y' +
-                                newN.toString() + 'n');
-        }
-        else if(randomNo === 2) {
-          console.log('GNS: ' + x + 'x' + y + 'y' + n + 'n');
-          var posArr = getNextSide(n, x, y, n),
-              newX = posArr[0],
-              newY = posArr[1],
-              newN = ringAdd5(n);
-          console.log(posArr);
-          newestAnimations.push(newX.toString() + 'x' +
-                                newY.toString() + 'y' +
-                                newN.toString() + 'n');
-        }
-        else if(randomNo === 3) {
-          var posArr = getNextSide(ringAdd5(n), x, y, ringAdd5(n)),
-              newX = posArr[0];
-              newY = posArr[1];
-              newN = ringAdd4(posArr[2]),
-              nextSide = newX.toString() + 'x' +
-                         newY.toString() + 'y' +
-                         newN.toString() + 'n';
-
-          newestAnimations.push(nextSide);
-          newestAnimations.push(equivalentSide(nextSide));
-        }*/
-
       }
 
       draw(newestAnimations);
     }
-  }, 50);
+  }, 16);
 }
 
 function equivalentSide(side) {
-  var x = parseInt(side.split('x')[0], 10),
-      y = parseInt(side.split('y')[0].split('x')[1], 10),
-      n = parseInt(side.split('y')[1].split('n')[0], 10);
+  var arr = positionArray(side),
+        x = arr[0],
+        y = arr[1],
+        n = arr[2];
 
   if(n === 1) {
     var posArr = (y % 2 === 1)
@@ -164,7 +169,6 @@ function hex(cx, cy, s, indexX, indexY) {
   var x = indexX.toString() + 'x',
       y = indexY.toString() + 'y';
 
-
   for(var i = 1; i < 7; i++) {
     var n = i.toString() + 'n';
     path[x+y+n] = new Path2D();
@@ -179,9 +183,9 @@ function hex(cx, cy, s, indexX, indexY) {
       path[x+y+n].lineTo(cx + s * Math.cos(-i * Math.PI / 3),
                  cy + s * Math.sin(-i * Math.PI / 3));
     }
-    //x+y+n === '1x16y5n'
-    if(nextAnimations.indexOf(x+y+n) > -1) {
-      ctx.strokeStyle = 'rgb(255, 0, 0)';
+
+    if(sidesToAnimate.indexOf(x+y+n) > -1) {
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
     }
     else {
       ctx.strokeStyle = 'rgba(0,0,0, 0.1)';
@@ -204,16 +208,16 @@ function nextSide(direction, fork, side) {
 
   if(direction === 'ccw') {
     var nextPosArr = (fork === 'left')
-                 ? [x, y, ringAdd1(n)]
-                 : [_x, _y, ringAdd5(_n)],
+                 ? [x, y, ringAdd(n, 1, 6)]
+                 : [_x, _y, ringAdd(_n, 5, 6)],
         posStr = positionString(nextPosArr);
 
     return (fork === 'left') ? posStr : equivalentSide(posStr);
   }
   else if(direction === 'cw') {
     var nextPosArr = (fork === 'left')
-                 ? [_x, _y, ringAdd1(_n)]
-                 : [x, y, ringAdd5(n)],
+                 ? [_x, _y, ringAdd(_n, 1, 6)]
+                 : [x, y, ringAdd(n, 5, 6)],
         posStr = positionString(nextPosArr);
 
     return (fork === 'left') ? equivalentSide(posStr) : posStr;
@@ -232,73 +236,14 @@ function positionArray(posStr) {
   return [x, y, n];
 }
 
-function getNextSide(index, x, y, n) {
-  if(index === 1) {
-    return y % 2 === 1
-           ? [x - 1, y, ringAdd5(n)]
-           : [x - 1, y, ringAdd5(n)];
-  }
-  else if(index === 2) {
-    return y % 2 === 1
-           ? [x, y - 1, ringAdd5(n)]
-           : [x - 1, y - 1, ringAdd5(n)];
-  }
-  else if(index === 3) {
-    return y % 2 === 1
-           ? [x + 1, y - 1, ringAdd5(n)]
-           : [x, y - 1, ringAdd5(n)];
-  }
-  else if(index === 4) {
-    return y % 2 === 1
-           ? [x + 1, y, ringAdd5(n)]
-           : [x + 1, y, ringAdd5(n)];
-  }
-  else if(index === 5) {
-    return y % 2 === 1
-           ? [x + 1, y + 1, ringAdd5(n)]
-           : [x, y + 1, ringAdd5(n)];
-  }
-  else if(index === 6) {
-    return y % 2 === 1
-           ? [x, y + 1, ringAdd5(n)]
-           : [x - 1, y + 1, ringAdd5(n)];
-  }
-}
-
-function ringAdd1(n) {
-  if(n === 5) {
-    return 6;
-  }
-  else {
-    return (n + 1) % 6;
-  }
-}
-
-function ringAdd5(n) {
-  if(n === 1) {
-    return 6;
-  }
-  else {
-    return (n + 5) % 6;
-  }
-}
-
-function ringAdd4(n) {
-  if(n === 2) {
-    return 6;
-  }
-  else {
-    return (n + 4) % 6;
-  }
-}
-
-function ringAdd2(n) {
-  if(n === 4) {
-    return 6;
-  }
-  else {
-    return (n + 2) % 6;
-  }
+//modular arithmetic for hex sides 1-6
+function ringAdd(x, y, base) {
+    if(x + y === base) {
+        return base;
+    }
+    else {
+        return (x + y) % base;
+    }
 }
 
 function randomIntBetween(min,max) {
