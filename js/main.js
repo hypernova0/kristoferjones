@@ -6,6 +6,8 @@ var height = $('body').innerHeight(),
     defaultAnimations = [],
     nextAnimations = [],
     sidesToAnimate = [],
+    maxCols,
+    maxRows,
     pause = false;
 
 $('#canvas').attr('height', height).attr('width', width);
@@ -28,9 +30,10 @@ function draw(animations) {
   var cx = 0,
       cy = 0,
       s = 40,
-      apothem = (Math.sqrt(3) * s) / 2,
-      maxCols = Math.floor((width/(1.5*s) + 1)),
-      maxRows = Math.floor((height/(2*apothem) + 1));
+      apothem = (Math.sqrt(3) * s) / 2;
+
+  maxCols = Math.floor((width/(1.5*s) + 1));
+  maxRows = Math.floor((height/(2*apothem) + 1));
 
   defaultAnimations = [];
 
@@ -185,10 +188,16 @@ function hex(cx, cy, s, indexX, indexY) {
     }
 
     if(sidesToAnimate.indexOf(x+y+n) > -1) {
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    }
+    else if(x === '0x' || y === '0y' || x === maxRows + 'x' || y === maxCols + 'y') {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    }
+    else if(x === '1x' || y === '1y' || x === (maxRows - 1) + 'x' || y === (maxCols - 1) + 'y') {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     }
     else {
-      ctx.strokeStyle = 'rgba(0,0,0, 0.1)';
+      ctx.strokeStyle = 'rgba(255,255,255, 0.2)';
     }
     ctx.stroke(path[x+y+n]);
   }
