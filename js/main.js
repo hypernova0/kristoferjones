@@ -105,8 +105,6 @@ function draw(animations) {
             sidesToAnimate.push(next);
             sidesToAnimate.push(equivalentSide(next));
           }
-
-          //newestAnimations.push(equivalentSide(next));
         }
         else {
           var fork = 'right',
